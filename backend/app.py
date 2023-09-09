@@ -11,6 +11,7 @@ CORS(app)
 current_directory = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(current_directory, 'cards.db')
 
+
 def create_table_if_not_exists():
     create_table_query = '''CREATE TABLE IF NOT EXISTS cards(
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,6 +28,7 @@ def create_table_if_not_exists():
             cursor.execute(create_table_query)
             conn.commit()
 
+
 def db_connection():
     try:
         conn = sqlite3.connect(db_path)
@@ -34,6 +36,7 @@ def db_connection():
     except sqlite3.Error as e:
         print(f"Database connection error: {e}")
         return None
+
 
 def db_query(query, params=()):
     with db_connection() as conn:
@@ -45,6 +48,7 @@ def db_query(query, params=()):
             return result
         else:
             return None
+
 
 @app.route('/upload_csv', methods=['POST'])
 def upload_csv():
@@ -63,7 +67,9 @@ def upload_csv():
                 next(reader)  # Skip the first row (headers)
                 cursor.execute("DELETE FROM cards")
                 for row in reader:
-                    cursor.execute("INSERT INTO cards (collection, number, name, pitch, card_type, language) VALUES (?, ?, ?, ?, ?, ?)", (row[0], row[1], row[2], row[3], row[4], row[5]))
+                    cursor.execute(
+                        "INSERT INTO cards (collection, number, name, pitch, card_type, language) VALUES (?, ?, ?, ?, ?, ?)",
+                        (row[0], row[1], row[2], row[3], row[4], row[5]))
             conn.commit()
     except Exception as e:
         print(f"Error: {e}")
@@ -72,6 +78,7 @@ def upload_csv():
         os.remove(file_path)
 
     return jsonify({'message': 'CSV uploaded successfully'})
+
 
 @app.route('/cards', methods=['GET'])
 def get_cards():
@@ -92,9 +99,11 @@ def get_cards():
     if cards is None:
         return jsonify({'message': 'Database query error'}), 500
 
-    formatted_cards = [{"count": card[0], "collection": card[1], "name": card[2], "pitch": card[3], "type": card[4], "language": card[5]} for card in cards]
+    formatted_cards = [{"count": card[0], "collection": card[1], "name": card[2], "pitch": card[3], "type": card[4],
+                        "language": card[5]} for card in cards]
 
     return jsonify(formatted_cards)
+
 
 if __name__ == '__main__':
     create_table_if_not_exists()  # Make sure the table exists

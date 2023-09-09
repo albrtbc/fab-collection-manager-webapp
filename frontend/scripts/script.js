@@ -34,14 +34,14 @@ async function searchCards() {
 
     const promises = cards.map(async (card) => {
         try {
-            const { count, name, pitch } = card;
+            const {count, name, pitch} = card;
             const url = `${BASE_URL}/cards?name=${name}&pitch=${encodeURIComponent(pitch || '')}`;
             const response = await fetch(url);
             const data = await response.json();
 
             // Add additional validations for data here
 
-            const { haveText, missingText, totalMissing, totalHave } = handleCardData(data, card);
+            const {haveText, missingText, totalMissing, totalHave} = handleCardData(data, card);
             haveList += haveText;
             missingList += missingText;
             totalMissingCards += totalMissing;
@@ -92,7 +92,7 @@ function handleCardData(data, card) {
         totalMissing = card.count - totalHave;
     }
 
-    return { haveText, missingText, totalMissing, totalHave };
+    return {haveText, missingText, totalMissing, totalHave};
 }
 
 function parseDeck(text) {
@@ -105,7 +105,7 @@ function parseDeck(text) {
         let match = regexWithColor.exec(line);
         if (match) {
             const [, count, name, pitch] = match;
-            cards.push({ count, name, pitch });
+            cards.push({count, name, pitch});
             continue;
         }
 
@@ -115,7 +115,7 @@ function parseDeck(text) {
             const nameArray = names.split(",");
 
             for (const name of nameArray) {
-                cards.push({ count: 1, name: name.trim(), pitch: "N/A" });
+                cards.push({count: 1, name: name.trim(), pitch: "N/A"});
             }
         }
     }

@@ -1,14 +1,14 @@
-﻿document.addEventListener("DOMContentLoaded", function() {
+﻿document.addEventListener("DOMContentLoaded", function () {
     const searchBox = document.getElementById("searchBox");
     const searchResults = document.getElementById("searchResults");
 
-    if(!searchBox || !searchResults) {
+    if (!searchBox || !searchResults) {
         console.log("Could not find search elements");
         return;
     }
 
     let debounce;
-    searchBox.addEventListener("input", async function() {
+    searchBox.addEventListener("input", async function () {
         clearTimeout(debounce);
         debounce = setTimeout(async () => {
             const query = this.value;
