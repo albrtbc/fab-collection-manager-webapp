@@ -9,6 +9,9 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 CORS(app)
 
+current_directory = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(current_directory, 'cards.db')
+
 def db_query(query, params=()):
     conn = sqlite3.connect('cards.db')
     cursor = conn.cursor()
@@ -20,7 +23,7 @@ def db_query(query, params=()):
 
 @app.route('/upload_csv', methods=['POST'])
 def upload_csv():
-    conn = sqlite3.connect('cards.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     uploaded_file = request.files['file']
