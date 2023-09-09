@@ -5,7 +5,7 @@
     searchBox.addEventListener("input", async function() {
         const query = this.value;
         if (query.length < 1) {
-            searchResults.innerHTML = ""; // Limpiar resultados si el input está vacío
+            searchResults.innerHTML = ""; // Clear results if input is empty
             return;
         }
 
@@ -13,7 +13,7 @@
         try {
             const res = await fetch(url);
             if (!res.ok) {
-                console.log("Error en la búsqueda");
+                console.log("Search error");
                 return;
             }
 
@@ -26,7 +26,7 @@
 
             searchResults.innerHTML = resultsHtml;
         } catch (err) {
-            console.log("Error al realizar la solicitud:", err);
+            console.log("Error making the request:", err);
         }
     });
 });

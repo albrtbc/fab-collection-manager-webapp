@@ -32,11 +32,11 @@ async function searchCards() {
 
                 if (totalCards > 0) {
                     if (Object.keys(collections).length === 1) {
-                        haveList += `Tienes ${totalCards} de la carta "${card.name} (${card.pitch})" en la colección ${Object.keys(collections)[0]}.<br>`;
+                        haveList += `You have ${totalCards} of the card "${card.name} (${card.pitch})" in the ${Object.keys(collections)[0]} collection.<br>`;
                     } else {
-                        haveList += `Tienes ${totalCards} de la carta "${card.name} (${card.pitch})".<br>`;
+                        haveList += `You have ${totalCards} of the card "${card.name} (${card.pitch})".<br>`;
                         for (let [collection, count] of Object.entries(collections)) {
-                            haveList += `&emsp; - ${count} en la colección ${collection}<br>`;
+                            haveList += `&emsp; - ${count} in the ${collection} collection<br>`;
                         }
                     }
                 }
@@ -46,32 +46,29 @@ async function searchCards() {
                 }
 
                 if (totalCards < card.count) {
-                    missingList += `Te falta(n) ${card.count - totalCards} de la carta "${card.name} (${card.pitch})".<br>`;
+                    missingList += `You are missing ${card.count - totalCards} of the card "${card.name} (${card.pitch})".<br>`;
                     totalMissingCards += (card.count - totalCards);
                 }
             })
             .catch(err => {
-                console.log("Una solicitud falló", err);
+                console.log("A request failed", err);
             });
     });
 
     await Promise.allSettled(promises);
 
-    resultsElement.innerHTML = `<h3>Cartas que tienes (${totalHaveCards}):</h3>${haveList}<h3>Cartas que te faltan (${totalMissingCards}):</h3>${missingList}`;
-
+    resultsElement.innerHTML = `<h3>Cards you have (${totalHaveCards}):</h3>${haveList}<h3>Cards you're missing (${totalMissingCards}):</h3>${missingList}`;
 }
 
 function parseDeck(text) {
     let cards = [];
-
-    // Primero, separamos el texto en líneas
+    // First, split the text into lines
     const lines = text.split("\n");
 
-    // Para cartas con color/pitch
-    // const regexWithColor = /\((\d+)\)\s+([\w\s]+)\s+\((red|yellow|blue)\)/;
+    // For cards with pitch/color
     const regexWithColor = /\((\d+)\)\s+([-\w\s]+)\s+\((red|yellow|blue)\)/;
 
-    // Para cartas sin color/pitch (Hero, Weapons, Equipment)
+    // For cards without pitch/color (Hero, Weapons, Equipment)
     const regexNoColor = /(Hero|Weapons|Equipment):\s+(.+)/;
 
     for (let line of lines) {
@@ -96,19 +93,18 @@ function parseDeck(text) {
     return cards;
 }
 
-// Antes de tu función uploadCsv() o dentro de ella, según tu diseño
+// Before or inside your uploadCsv() function, depending on your design
 function showUploadBadge(file) {
     const uploadedFileInfo = document.getElementById("uploadedFileInfo");
     if (file) {
-        uploadedFileInfo.innerHTML = `Archivo subido: ${file.name}`;
-        // Ocultar el texto de arrastrar y soltar
+        uploadedFileInfo.innerHTML = `Uploaded file: ${file.name}`;
+        // Hide the drag-and-drop text
         document.getElementById("dropZoneText").style.display = "none";
     }
     uploadedFileInfo.style.display = "inline";
 }
 
 // ...
-
 async function uploadCsv() {
     const csvFile = document.getElementById('csvFile').files[0];
     const formData = new FormData();
@@ -121,17 +117,17 @@ async function uploadCsv() {
             body: formData,
         });
 
-        uploadAlert.innerText = 'CSV subido correctamente';
+        uploadAlert.innerText = 'CSV uploaded successfully';
         uploadAlert.classList.add('alert-success');
         uploadAlert.classList.remove('alert-danger');
 
-        // Mostrar la alerta con transición
+        // Show the alert with a transition
         uploadAlert.style.opacity = 0;
         uploadAlert.style.display = 'block';
         uploadAlert.classList.add('fade-in-out');
         uploadAlert.style.opacity = 1;
 
-        // Desaparecer la alerta después de 3 segundos
+        // Fade out the alert after 3 seconds
         setTimeout(() => {
             uploadAlert.style.opacity = 0;
             setTimeout(() => {
@@ -140,19 +136,19 @@ async function uploadCsv() {
         }, 3000);
 
     } catch (error) {
-        console.error('Error subiendo el CSV:', error);
+        console.error('Error uploading the CSV:', error);
 
-        uploadAlert.innerText = 'Error subiendo el archivo';
+        uploadAlert.innerText = 'Error uploading the file';
         uploadAlert.classList.add('alert-danger');
         uploadAlert.classList.remove('alert-success');
 
-        // Mostrar la alerta con transición
+        // Show the alert with a transition
         uploadAlert.style.opacity = 0;
         uploadAlert.style.display = 'block';
         uploadAlert.classList.add('fade-in-out');
         uploadAlert.style.opacity = 1;
 
-        // Desaparecer la alerta después de 3 segundos
+        // Fade out the alert after 3 seconds
         setTimeout(() => {
             uploadAlert.style.opacity = 0;
             setTimeout(() => {
@@ -162,15 +158,14 @@ async function uploadCsv() {
     }
 }
 
-
-// Función para abrir el selector de archivos
+// Function to open the file picker
 function openFilePicker() {
     document.getElementById("csvFile").click();
 }
 
-// Configurar la zona de arrastre y suelta
+// Set up the drag-and-drop area
 const dropZone = document.getElementById("dropZone");
-if (dropZone) {  // Verifica si estamos en la página correcta
+if (dropZone) {  // Check if we're on the correct page
     dropZone.addEventListener("dragover", (e) => {
         e.preventDefault();
         dropZone.classList.add("drop-zone--over");
@@ -189,15 +184,10 @@ if (dropZone) {  // Verifica si estamos en la página correcta
         showUploadBadge(file);
     });
 
-    // Abrir el selector de archivos cuando se hace clic en la zona de arrastre
+    // Open the file picker when the drag-and-drop area is clicked
     dropZone.addEventListener("click", openFilePicker);
-    
+
     document.getElementById("csvFile").addEventListener("change", (e) => {
         showUploadBadge(e.target.files[0]);
     });
 }
-
-
-
-
-
