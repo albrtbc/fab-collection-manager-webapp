@@ -1,9 +1,14 @@
 ﻿document.addEventListener("DOMContentLoaded", function() {
+    const navbarContainer = document.getElementById("navbar");
+
+    if(!navbarContainer) {
+        console.log("Navbar container not found.");
+        return;
+    }
+
     const navbar = document.createElement("nav");
     navbar.className = "navbar navbar-expand-lg custom-nav";
-    navbar.style = "width: 100%; height: 100%;";
 
-    // Toggle button for small screens
     const btn = document.createElement("button");
     btn.className = "navbar-toggler";
     btn.type = "button";
@@ -18,7 +23,7 @@
 
     const navDiv = document.createElement("div");
     navDiv.className = "collapse navbar-collapse";
-    navDiv.id = "navbarNav";  // Add this ID for the toggle to work
+    navDiv.id = "navbarNav";
 
     const ul = document.createElement("ul");
     ul.className = "navbar-nav";
@@ -44,6 +49,5 @@
 
     navDiv.appendChild(ul);
     navbar.appendChild(navDiv);
-
-    document.getElementById("navbar").appendChild(navbar);
+    navbarContainer.appendChild(navbar);
 });

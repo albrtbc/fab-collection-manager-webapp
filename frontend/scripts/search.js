@@ -2,31 +2,40 @@
     const searchBox = document.getElementById("searchBox");
     const searchResults = document.getElementById("searchResults");
 
-    searchBox.addEventListener("input", async function() {
-        const query = this.value;
-        if (query.length < 1) {
-            searchResults.innerHTML = ""; // Clear results if input is empty
-            return;
-        }
+    if(!searchBox || !searchResults) {
+        console.log("Could not find search elements");
+        return;
+    }
 
-        let url = `http://localhost:5000/cards?name=${encodeURIComponent(query)}`;
-        try {
-            const res = await fetch(url);
-            if (!res.ok) {
-                console.log("Search error");
+    let debounce;
+    searchBox.addEventListener("input", async function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+            const query = this.value;
+            if (query.length < 1) {
+                searchResults.innerHTML = ""; // Clear results if input is empty
                 return;
             }
 
-            const data = await res.json();
+            const url = `http://localhost:5000/cards?name=${encodeURIComponent(query)}`;
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    searchResults.innerHTML = "Search error";
+                    return;
+                }
 
-            let resultsHtml = "";
-            for (let card of data) {
-                resultsHtml += `<div>${card.count}x ${card.name} (${card.pitch}) (${card.collection})</div>`;
+                const data = await res.json();
+                let resultsHtml = "";
+                for (const card of data) {
+                    resultsHtml += `<div>${card.count}x ${card.name} (${card.pitch}) :: <strong>${card.collection}</strong> collection</div>`;
+                }
+
+                searchResults.innerHTML = resultsHtml;
+            } catch (err) {
+                console.log("Error making the request:", err);
+                searchResults.innerHTML = "Something went wrong";
             }
-
-            searchResults.innerHTML = resultsHtml;
-        } catch (err) {
-            console.log("Error making the request:", err);
-        }
+        }, 300); // Debounce time in milliseconds
     });
 });
