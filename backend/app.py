@@ -1,5 +1,4 @@
 import sqlite3
-import re
 import csv
 import os
 from flask import Flask, request, jsonify
@@ -12,37 +11,51 @@ CORS(app)
 current_directory = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(current_directory, 'cards.db')
 
+
+def db_connection():
+    try:
+        conn = sqlite3.connect(db_path)
+        return conn
+    except sqlite3.Error as e:
+        print(f"Error de conexión a la base de datos: {e}")
+        return None
+
+
 def db_query(query, params=()):
-    conn = sqlite3.connect('cards.db')
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    conn.commit()
-    result = cursor.fetchall()
-    conn.close()
-    return result
+    with db_connection() as conn:
+        if conn is not None:
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.commit()
+            result = cursor.fetchall()
+            return result
+        else:
+            return None
+
 
 @app.route('/upload_csv', methods=['POST'])
 def upload_csv():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
     uploaded_file = request.files['file']
+    if uploaded_file.filename == '':
+        return jsonify({'message': 'No se proporcionó un archivo'}), 400
 
-    if uploaded_file.filename != '':
-        file_path = secure_filename(uploaded_file.filename)
-        uploaded_file.save(file_path)
+    file_path = secure_filename(uploaded_file.filename)
+    uploaded_file.save(file_path)
 
-        with open(file_path, 'r') as f:
-            reader = csv.reader(f)
-            next(reader)  # Saltar la primera fila (cabeceras)
-            cursor.execute("DELETE FROM cards")
-            for row in reader:
-                cursor.execute("INSERT INTO cards (collection, number, name, pitch, card_type, language) VALUES (?, ?, ?, ?, ?, ?)", (row[0], row[1], row[2], row[3], row[4], row[5]))
-
-        conn.commit()
-        conn.close()
-
-        # Eliminar el archivo CSV
+    try:
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            with open(file_path, 'r') as f:
+                reader = csv.reader(f)
+                next(reader)  # Saltar la primera fila (cabeceras)
+                cursor.execute("DELETE FROM cards")
+                for row in reader:
+                    cursor.execute("INSERT INTO cards (collection, number, name, pitch, card_type, language) VALUES (?, ?, ?, ?, ?, ?)", (row[0], row[1], row[2], row[3], row[4], row[5]))
+            conn.commit()
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'message': 'Error al procesar el CSV'}), 500
+    finally:
         os.remove(file_path)
 
     return jsonify({'message': 'CSV subido correctamente'})
@@ -64,10 +77,13 @@ def get_cards():
     query += " GROUP BY number, name, pitch, collection"
 
     cards = db_query(query, params)
+    if cards is None:
+        return jsonify({'message': 'Error en la consulta a la base de datos'}), 500
+
     formatted_cards = [{"count": card[0], "collection": card[1], "name": card[2], "pitch": card[3], "type": card[4], "language": card[5]} for card in cards]
 
     return jsonify(formatted_cards)
 
+
 if __name__ == '__main__':
     app.run(debug=True)
-
