@@ -12,6 +12,23 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(current_directory, 'cards.db')
 
 
+def create_table_if_not_exists():
+    create_table_query = '''CREATE TABLE IF NOT EXISTS cards(
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                collection TEXT,
+                                number TEXT,
+                                name TEXT,
+                                pitch TEXT,
+                                card_type TEXT,
+                                language TEXT
+                            );'''
+
+    with db_connection() as conn:
+        if conn is not None:
+            cursor = conn.cursor()
+            cursor.execute(create_table_query)
+            conn.commit()
+            
 def db_connection():
     try:
         conn = sqlite3.connect(db_path)
@@ -86,4 +103,5 @@ def get_cards():
 
 
 if __name__ == '__main__':
+    create_table_if_not_exists() # Asegurarse de que la tabla exista
     app.run(debug=True)
