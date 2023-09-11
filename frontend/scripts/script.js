@@ -65,7 +65,7 @@ async function searchCards() {
     await Promise.allSettled(promises);
 
     const sortFunction = (a, b) => {
-        const pitchOrder = ['Red', 'Yellow', 'Blue'];
+        const pitchOrder = ['red', 'yellow', 'blue'];
 
         if (a.pitch === 'N/A' && b.pitch !== 'N/A') {
             return -1;
@@ -118,7 +118,6 @@ function handleCardData(data, card) {
     let totalHave = 0;
 
     let collections = {};
-    console.log(data);
     for (let cardData of data) {
         let collection = cardData.collection;
         let countInCollection = parseInt(cardData.count, 10);
