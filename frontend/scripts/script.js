@@ -27,35 +27,85 @@ async function searchCards() {
     const deckText = document.getElementById("deckText").value;
     const cards = parseDeck(deckText);
 
-    let haveList = "";
-    let missingList = "";
+    let haveList = [];
+    let missingList = [];
     let totalMissingCards = 0;
     let totalHaveCards = 0;
 
     const promises = cards.map(async (card) => {
         try {
-            const {count, name, pitch} = card;
-            const url = `${BASE_URL}/cards?name=${name}&pitch=${encodeURIComponent(pitch || '')}`;
-            const response = await fetch(url);
-            const data = await response.json();
+            const data = await fetchCardData(card);
+            const { haveText, missingText, totalMissing, totalHave } = handleCardData(data, card);
 
-            // Add additional validations for data here
+            if (haveText) {
+                haveList.push({
+                    count: totalHave,
+                    name: card.name,
+                    pitch: card.pitch,
+                    html: haveText
+                });
+            }
+            if (missingText) {
+                missingList.push({
+                    count: totalMissing,
+                    name: card.name,
+                    pitch: card.pitch,
+                    html: missingText
+                });
+            }
 
-            const {haveText, missingText, totalMissing, totalHave} = handleCardData(data, card);
-            haveList += haveText;
-            missingList += missingText;
             totalMissingCards += totalMissing;
             totalHaveCards += totalHave;
 
         } catch (err) {
-            console.log("A request failed", err);
+            handleError(err);
         }
     });
 
     await Promise.allSettled(promises);
 
+    const sortFunction = (a, b) => {
+        if (a.pitch === 'N/A' && b.pitch !== 'N/A') {
+            return -1;
+        }
+        if (a.pitch !== 'N/A' && b.pitch === 'N/A') {
+            return 1;
+        }
+        if (a.pitch === b.pitch) {
+            return a.name.localeCompare(b.name);
+        }
+        return a.pitch.localeCompare(b.pitch);
+    };
+
+    haveList.sort(sortFunction);
+    missingList.sort(sortFunction);
+
+    const haveListHTML = generateHTML(haveList);
+    const missingListHTML = generateHTML(missingList);
+
     const resultsElement = document.getElementById("results");
-    resultsElement.innerHTML = `<h3>Cards you have (${totalHaveCards}):</h3>${haveList}<h3>Cards you're missing (${totalMissingCards}):</h3>${missingList}`;
+    resultsElement.innerHTML = `<h3>Cards you have (${totalHaveCards}):</h3>${haveListHTML}<h3>Cards you're missing (${totalMissingCards}):</h3>${missingListHTML}`;
+}
+
+async function fetchCardData(card) {
+    const urlParams = new URLSearchParams({name: card.name, pitch: card.pitch || ''});
+    const url = `${BASE_URL}/cards?${urlParams.toString()}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+
+    return response.json();
+}
+
+function handleError(err) {
+    console.log("A request failed", err);
+    // Show an alert or some feedback to the user
+}
+
+function generateHTML(list, type) {
+    return list.map(card => card.html).join('');
 }
 
 function handleCardData(data, card) {
@@ -65,6 +115,7 @@ function handleCardData(data, card) {
     let totalHave = 0;
 
     let collections = {};
+    console.log(data);
     for (let cardData of data) {
         let collection = cardData.collection;
         let countInCollection = parseInt(cardData.count, 10);
@@ -76,11 +127,22 @@ function handleCardData(data, card) {
         collections[collection] += countInCollection;
     }
 
+    const actualColor = card.pitch === 'yellow' ? '#dac720' : card.pitch; // Nuevo: elige un amarillo más oscuro si el pitch es "yellow"
+
+    const coloredPitch = `<span style='color:${actualColor};'>${card.pitch}</span>`; // Utiliza 'actualColor' en lugar de 'card.pitch'
+    // const coloredPitch = `<span style='color:${card.pitch};'>${card.pitch}</span>`;  // Línea nueva
+
+    let displayPitch = card.pitch === 'N/A' ? '' : ` (${coloredPitch})`;
+    if (card.pitch === 'yellow') {
+        displayPitch = ` (<span style='color:#DAA520;'>${card.pitch}</span>)`;
+    }
+
     if (totalHave > 0) {
         if (Object.keys(collections).length === 1) {
-            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name} (${card.pitch})</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection.<br>`;
+            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection.<br>`;
+            // haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name} (${coloredPitch})</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection.<br>`;
         } else {
-            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name} (${card.pitch})</strong>".<br>`;
+            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>".<br>`;
             for (let [collection, count] of Object.entries(collections)) {
                 haveText += `&emsp; - ${count} in the <strong>${collection}</strong> collection<br>`;
             }
@@ -88,12 +150,13 @@ function handleCardData(data, card) {
     }
 
     if (totalHave < card.count) {
-        missingText = `You are missing <strong>${card.count - totalHave}</strong> of the card "<strong>${card.name} (${card.pitch})</strong>".<br>`;
+        missingText = `You are missing <strong>${card.count - totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>".<br>`;
         totalMissing = card.count - totalHave;
     }
 
     return {haveText, missingText, totalMissing, totalHave};
 }
+
 
 function parseDeck(text) {
     let cards = [];
