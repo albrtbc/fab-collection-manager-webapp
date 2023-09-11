@@ -65,6 +65,8 @@ async function searchCards() {
     await Promise.allSettled(promises);
 
     const sortFunction = (a, b) => {
+        const pitchOrder = ['Red', 'Yellow', 'Blue'];
+
         if (a.pitch === 'N/A' && b.pitch !== 'N/A') {
             return -1;
         }
@@ -74,7 +76,8 @@ async function searchCards() {
         if (a.pitch === b.pitch) {
             return a.name.localeCompare(b.name);
         }
-        return a.pitch.localeCompare(b.pitch);
+
+        return pitchOrder.indexOf(a.pitch) - pitchOrder.indexOf(b.pitch);
     };
 
     haveList.sort(sortFunction);
