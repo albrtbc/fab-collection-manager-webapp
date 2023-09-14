@@ -177,10 +177,15 @@ function parseDeck(text) {
         match = regexNoColor.exec(line);
         if (match) {
             const [, type, names] = match;
-            const nameArray = names.split(",");
 
-            for (const name of nameArray) {
-                cards.push({count: 1, name: name.trim(), pitch: "N/A"});
+            // Si el tipo es Hero, lo consideramos una única carta aunque tenga comas
+            if (type === 'Hero') {
+                cards.push({count: 1, name: names.trim(), pitch: "N/A"});
+            } else {
+                const nameArray = names.split(",");
+                for (const name of nameArray) {
+                    cards.push({count: 1, name: name.trim(), pitch: "N/A"});
+                }
             }
         }
     }
