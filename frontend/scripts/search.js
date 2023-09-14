@@ -28,7 +28,11 @@
                 const data = await res.json();
                 let resultsHtml = "";
                 for (const card of data) {
-                    resultsHtml += `<div>${card.count}x ${card.name} (${card.pitch}) :: <strong>${card.collection}</strong> collection</div>`;
+                    let color = card.pitch.toLowerCase(); // Convert to lowercase
+                    if (color === 'yellow') {
+                        color = '#DAA520';
+                    }
+                    resultsHtml += `<div>${card.count}x ${card.name} (<span style='color:${color};'><strong>${card.pitch}</strong></span>) :: <strong>${card.collection}</strong> collection</div>`;
                 }
 
                 searchResults.innerHTML = resultsHtml;
