@@ -134,17 +134,16 @@ function handleCardData(data, card) {
     const coloredPitch = `<span style='color:${actualColor};'>${card.pitch}</span>`; // Utiliza 'actualColor' en lugar de 'card.pitch'
     // const coloredPitch = `<span style='color:${card.pitch};'>${card.pitch}</span>`;  // Línea nueva
 
-    let displayPitch = card.pitch === 'N/A' ? '' : ` (${coloredPitch})`;
+    let displayPitch = card.pitch === 'N/A' ? '' : ` ${coloredPitch}`;
     if (card.pitch === 'yellow') {
-        displayPitch = ` (<span style='color:#DAA520;'>${card.pitch}</span>)`;
+        displayPitch = ` <span style='color:#DAA520;'>${card.pitch}</span>`;
     }
 
     if (totalHave > 0) {
         if (Object.keys(collections).length === 1) {
-            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection.<br>`;
-            // haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name} (${coloredPitch})</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection.<br>`;
+            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection<br>`;
         } else {
-            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>".<br>`;
+            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>"<br>`;
             for (let [collection, count] of Object.entries(collections)) {
                 haveText += `&emsp; - ${count} in the <strong>${collection}</strong> collection<br>`;
             }
@@ -152,7 +151,8 @@ function handleCardData(data, card) {
     }
 
     if (totalHave < card.count) {
-        missingText = `You are missing <strong>${card.count - totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>".<br>`;
+        // missingText = `You are missing <strong>${card.count - totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>".<br>`;
+        missingText = `${card.count - totalHave} <strong>${card.name}${displayPitch}</strong><br>`;
         totalMissing = card.count - totalHave;
     }
 
