@@ -24,6 +24,7 @@ function showAlert(elementId, message, success = true) {
 }
 
 async function searchCards() {
+    const showProxies = document.getElementById("showProxies").value;
     const deckText = document.getElementById("deckText").value;
     const cards = parseDeck(deckText);
 
@@ -34,6 +35,7 @@ async function searchCards() {
 
     const promises = cards.map(async (card) => {
         try {
+            card.showProxies = showProxies;
             const data = await fetchCardData(card);
             const { haveText, missingText, totalMissing, totalHave } = handleCardData(data, card);
 
@@ -91,7 +93,7 @@ async function searchCards() {
 }
 
 async function fetchCardData(card) {
-    const urlParams = new URLSearchParams({name: card.name, pitch: card.pitch || ''});
+    const urlParams = new URLSearchParams({ name: card.name, pitch: card.pitch || '', showProxies: card.showProxies || '' });
     const url = `${BASE_URL}/cards?${urlParams.toString()}`;
     const response = await fetch(url);
 
@@ -117,46 +119,57 @@ function handleCardData(data, card) {
     let totalMissing = 0;
     let totalHave = 0;
 
-    let collections = {};
+    let collections = new Map();
+
     for (let cardData of data) {
-        let collection = cardData.collection;
+        let collectionName = cardData.collection;
+        let isProxy = cardData.isproxy === 'TRUE' ? 'Proxy' : 'Original';
         let countInCollection = parseInt(cardData.count, 10);
         totalHave += countInCollection;
 
-        if (!collections[collection]) {
-            collections[collection] = 0;
+        let collectionKey = `${collectionName}::${isProxy}`;
+
+        if (!collections.has(collectionKey)) {
+            collections.set(collectionKey, 0);
         }
-        collections[collection] += countInCollection;
+        
+        collections.set(collectionKey, collections.get(collectionKey) + countInCollection);
     }
 
-    const actualColor = card.pitch === 'yellow' ? '#dac720' : card.pitch; // Nuevo: elige un amarillo más oscuro si el pitch es "yellow"
-
-    const coloredPitch = `<span style='color:${actualColor};'>${card.pitch}</span>`; // Utiliza 'actualColor' en lugar de 'card.pitch'
-    // const coloredPitch = `<span style='color:${card.pitch};'>${card.pitch}</span>`;  // Línea nueva
-
+    const actualColor = card.pitch === 'yellow' ? '#dac720' : card.pitch;
+    const coloredPitch = `<span style='color:${actualColor};'>${card.pitch}</span>`;
     let displayPitch = card.pitch === 'N/A' ? '' : ` ${coloredPitch}`;
+
     if (card.pitch === 'yellow') {
         displayPitch = ` <span style='color:#DAA520;'>${card.pitch}</span>`;
     }
 
     if (totalHave > 0) {
-        if (Object.keys(collections).length === 1) {
-            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>" in the <strong>${Object.keys(collections)[0]}</strong> collection<br>`;
+        if (collections.size === 1) {
+            const [collectionKey, count] = collections.entries().next().value;
+            const [collectionName, isProxyText] = collectionKey.split('::');
+            const listGroupItemClass = isProxyText === 'Proxy' ? 'list-group-item-warning' : 'list-group-item-success';
+            haveText = `<li class="list-group-item ${listGroupItemClass}">You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>" in the <strong>${collectionName}</strong> collection</li>`;
         } else {
-            haveText = `You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>"<br>`;
-            for (let [collection, count] of Object.entries(collections)) {
-                haveText += `&emsp; - ${count} in the <strong>${collection}</strong> collection<br>`;
+            haveText += `<li class="list-group-item list-group-item-success">You have <strong>${totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>"<br>`;
+
+            haveText += `<ul class="list-group w-100">`; // Lista interior para ocupar todo el espacio
+            for (let [collectionKey, count] of collections) {
+                const [collectionName, isProxyText] = collectionKey.split('::');
+                const listGroupItemClass = isProxyText === 'Proxy' ? 'list-group-item-warning' : 'list-group-item-success';
+                haveText += `<li class="list-group-item ${listGroupItemClass} w-100">${count} in the <strong>${collectionName}</strong> collection</li>`;
             }
+            
+            haveText += `</ul></li>`;
         }
     }
 
     if (totalHave < card.count) {
-        // missingText = `You are missing <strong>${card.count - totalHave}</strong> of the card "<strong>${card.name}${displayPitch}</strong>".<br>`;
-        missingText = `${card.count - totalHave} <strong>${card.name}${displayPitch}</strong><br>`;
+        missingText = `<li class="list-group-item list-group-item-danger">${card.count - totalHave} <strong>${card.name}${displayPitch}</strong></li>`;
         totalMissing = card.count - totalHave;
     }
 
-    return {haveText, missingText, totalMissing, totalHave};
+    return { haveText, missingText, totalMissing, totalHave };
 }
 
 
@@ -170,7 +183,7 @@ function parseDeck(text) {
         let match = regexWithColor.exec(line);
         if (match) {
             const [, count, name, pitch] = match;
-            cards.push({count, name, pitch});
+            cards.push({ count, name, pitch });
             continue;
         }
 
@@ -180,11 +193,11 @@ function parseDeck(text) {
 
             // Si el tipo es Hero, lo consideramos una única carta aunque tenga comas
             if (type === 'Hero') {
-                cards.push({count: 1, name: names.trim(), pitch: "N/A"});
+                cards.push({ count: 1, name: names.trim(), pitch: "N/A" });
             } else {
                 const nameArray = names.split(",");
                 for (const name of nameArray) {
-                    cards.push({count: 1, name: name.trim(), pitch: "N/A"});
+                    cards.push({ count: 1, name: name.trim(), pitch: "N/A" });
                 }
             }
         }

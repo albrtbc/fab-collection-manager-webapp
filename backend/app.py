@@ -20,7 +20,8 @@ def create_table_if_not_exists():
                                 name TEXT,
                                 pitch TEXT,
                                 card_type TEXT,
-                                language TEXT
+                                language TEXT,
+                                IsProxy BOOLEAN
                             );'''
     with db_connection() as conn:
         if conn is not None:
@@ -68,8 +69,8 @@ def upload_csv():
                 cursor.execute("DELETE FROM cards")
                 for row in reader:
                     cursor.execute(
-                        "INSERT INTO cards (collection, number, name, pitch, card_type, language) VALUES (?, ?, ?, ?, ?, ?)",
-                        (row[0], row[1], row[2], row[3], row[4], row[5]))
+                        "INSERT INTO cards (collection, number, name, pitch, card_type, language, isproxy) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
             conn.commit()
     except Exception as e:
         print(f"Error: {e}")
@@ -84,23 +85,29 @@ def upload_csv():
 def get_cards():
     name = request.args.get('name', '')
     pitch = request.args.get('pitch', 'N/A')  # 'N/A' undefined pitch
+    showProxies = request.args.get('showProxies', 'N/A')  # 'N/A' undefined pitch
 
-    query = """SELECT SUM(number), collection, name, pitch, card_type, language
+    query = """SELECT SUM(number), collection, name, pitch, card_type, language, isproxy
                FROM cards WHERE name LIKE ?"""
     params = ['%' + name + '%']
 
     if pitch != 'N/A':
         query += " AND LOWER(Pitch) = LOWER(?)"
         params.append(pitch)
+    # N/A shows both, True show only proxies, False show only real cards
+    if showProxies != 'N/A':
+        query += " AND LOWER(IsProxy) = LOWER(?)"
+        params.append(showProxies)
 
-    query += " GROUP BY number, name, pitch, collection"
+    query += " GROUP BY number, name, pitch, isproxy, collection"
 
+    print(query, params)
     cards = db_query(query, params)
     if cards is None:
         return jsonify({'message': 'Database query error'}), 500
 
     formatted_cards = [{"count": card[0], "collection": card[1], "name": card[2], "pitch": card[3], "type": card[4],
-                        "language": card[5]} for card in cards]
+                        "language": card[5], "isproxy": card[6]} for card in cards]
 
     return jsonify(formatted_cards)
 
